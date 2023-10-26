@@ -48,5 +48,5 @@ function getLastCharacter(str: string): string {
 }
 
 function clearEntry() {
-    calculationResult.value = ""
+    calculationResult.value = "0"
 }
