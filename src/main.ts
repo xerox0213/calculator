@@ -14,6 +14,8 @@ function handleClickCalculatorBtn(e: MouseEvent) {
         displayOperator(btnValue)
     } else if (numbers.includes(btnValue)) {
         displayNumber(btnValue)
+    } else if (btnValue === "CE") {
+        clearEntry();
     }
     return;
 }
@@ -43,4 +45,8 @@ function displayNumber(n: string) {
 
 function getLastCharacter(str: string): string {
     return str.charAt(str.length - 1)
+}
+
+function clearEntry() {
+    calculationResult.value = ""
 }
