@@ -15,6 +15,8 @@ function handleClickCalculatorBtn(e: MouseEvent) {
         displayNumber(btnValue)
     } else if (btnValue === "CE") {
         clearEntry();
+    } else if (btnValue === ".") {
+        displayPoint(btnValue);
     } else {
         return;
     }
@@ -25,7 +27,7 @@ function displayOperator(o: string) {
     const operands: string[] = extractOperands(calculationResult.value)
     const lastOperand: string = operands[operands.length - 1]
     if (operators.includes(lastCharacter) || (o === "-" && operands.length === 1 && lastOperand === "0")) {
-        calculationResult.value = calculationResult.value.slice(0,-1) + o
+        calculationResult.value = calculationResult.value.slice(0, -1) + o
         return;
     }
     calculationResult.value += o
@@ -38,10 +40,20 @@ function displayNumber(n: string) {
         return;
     }
     if (n !== "0" && lastOperand.length === 1 && lastOperand === "0") {
-        calculationResult.value = calculationResult.value.slice(0,-1) + n;
+        calculationResult.value = calculationResult.value.slice(0, -1) + n;
         return;
     }
     calculationResult.value += n;
+}
+
+function displayPoint(p: string) {
+    const operands: string[] = extractOperands(calculationResult.value)
+    const lastOperand: string = operands[operands.length - 1]
+    const regexPoint = /\./
+    if (regexPoint.test(lastOperand)) {
+        return
+    }
+    calculationResult.value += p;
 }
 
 function getLastCharacter(str: string): string {
