@@ -2,6 +2,8 @@ const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll(
 const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
 const operators = ["+", "-", "/", "*"]
 const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+let calculation: string = calculationResult.value;
+
 calculatorBtns.forEach((btn: HTMLButtonElement) => {
     btn.addEventListener("click", handleClickCalculatorBtn)
 })
@@ -13,57 +15,57 @@ function handleClickCalculatorBtn(e: MouseEvent) {
         displayOperator(btnValue)
     } else if (numbers.includes(btnValue)) {
         displayNumber(btnValue)
-    } else if (btnValue === "CE") {
-        clearEntry();
     } else if (btnValue === ".") {
         displayPoint(btnValue);
+    } else if (btnValue === "CE") {
+        clearEntry();
+    } else if (btnValue === "C") {
+        clear();
     } else {
         return;
     }
 }
 
 function displayOperator(o: string) {
-    const lastCharacter: string = getLastCharacter(calculationResult.value)
-    const operands: string[] = extractOperands(calculationResult.value)
-    const lastOperand: string = operands[operands.length - 1]
-    if (operators.includes(lastCharacter) || (o === "-" && operands.length === 1 && lastOperand === "0")) {
-        calculationResult.value = calculationResult.value.slice(0, -1) + o
+    const tokens: string[] = getTokens(calculation);
+    const lastToken: string = tokens[tokens.length - 1];
+    if ((operators.includes(lastToken) && tokens.length === 1) || lastToken === ".") {
         return;
-    }
-    calculationResult.value += o
+    } else if ((o === "-" && tokens.length === 1 && lastToken === "0") || operators.includes(lastToken)) {
+        calculation = calculation.slice(0, -1) + o;
+    } else calculation += o;
+    calculationResult.value = calculation;
 }
 
 function displayNumber(n: string) {
-    const operands: string[] = extractOperands(calculationResult.value)
-    const lastOperand: string = operands[operands.length - 1]
-    if (n === "0" && lastOperand.length === 1 && lastOperand === "0") {
-        return;
-    }
-    if (n !== "0" && lastOperand.length === 1 && lastOperand === "0") {
-        calculationResult.value = calculationResult.value.slice(0, -1) + n;
-        return;
-    }
-    calculationResult.value += n;
+    const tokens: string[] = getTokens(calculation);
+    const lastToken: string = tokens[tokens.length - 1];
+    if (lastToken === "0") {
+        if (n === "0") return
+        else calculation = calculation.slice(0, -1) + n
+    } else calculation += n
+    calculationResult.value = calculation;
 }
 
 function displayPoint(p: string) {
-    const operands: string[] = extractOperands(calculationResult.value)
-    const lastOperand: string = operands[operands.length - 1]
-    const regexPoint = /\./
-    if (regexPoint.test(lastOperand)) {
-        return
-    }
-    calculationResult.value += p;
-}
-
-function getLastCharacter(str: string): string {
-    return str.charAt(str.length - 1)
+    const tokens: string[] = getTokens(calculation);
+    const lastToken: string = tokens[tokens.length - 1];
+    if (operators.includes(lastToken) || /\./.test(lastToken)) return;
+    calculation += p;
+    calculationResult.value = calculation;
 }
 
 function clearEntry() {
-    calculationResult.value = "0"
+    if (calculation.length === 1) calculation = "0"
+    else calculation = calculation.slice(0, -1)
+    calculationResult.value = calculation
 }
 
-function extractOperands(c: string) {
-    return c.split(/[\-\+\/\*]/)
+function clear() {
+    calculation = "0";
+    calculationResult.value = calculation
+}
+
+function getTokens(expression: string): string[] {
+    return expression.split(/([\-\+\/\*])/).filter((token: string) => token !== "")
 }
