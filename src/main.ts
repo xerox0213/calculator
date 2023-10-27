@@ -2,7 +2,9 @@ const operators = ["+", "-", "/", "*"]
 const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
 const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
+const errorMsg = document.getElementById("error-message") as HTMLParagraphElement
 let calculation: string = calculationResult.value;
+let timeoutRef: number;
 calculatorBtns.forEach((btn: HTMLButtonElement) => {
     btn.addEventListener("click", handleClickCalculatorBtn)
 })
@@ -27,7 +29,9 @@ function handleClickCalculatorBtn(e: MouseEvent) {
             const result: string = getExpressionResult(tokens);
             displayResult(result)
         } catch (e) {
-            console.dir(e)
+            if (e instanceof Error) {
+                timeoutRef = displayError(e.message)
+            }
         }
     } else {
         return;
@@ -81,6 +85,16 @@ function getTokens(expression: string): string[] {
 function displayResult(result: string): void {
     calculation = result
     calculationResult.value = calculation;
+}
+
+function displayError(msg: string): number {
+    if (timeoutRef) clearTimeout(timeoutRef);
+    errorMsg.textContent = msg;
+    errorMsg.classList.add("active");
+    return setTimeout(() => {
+        errorMsg.classList.remove("active")
+        timeoutRef = 0;
+    }, 3000);
 }
 
 function isExpressionValid(expression: string): boolean {
