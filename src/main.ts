@@ -1,9 +1,8 @@
-const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
-const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
 const operators = ["+", "-", "/", "*"]
 const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
+const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
 let calculation: string = calculationResult.value;
-
 calculatorBtns.forEach((btn: HTMLButtonElement) => {
     btn.addEventListener("click", handleClickCalculatorBtn)
 })
@@ -21,6 +20,15 @@ function handleClickCalculatorBtn(e: MouseEvent) {
         clearEntry();
     } else if (btnValue === "C") {
         clear();
+    } else if (btnValue === "=") {
+        try {
+            if (!isExpressionValid(calculation)) throw new Error("Expression isn't valid!")
+            const tokens: string[] = getTokens(calculation);
+            const result: string = getExpressionResult(tokens);
+            displayResult(result)
+        } catch (e) {
+            console.dir(e)
+        }
     } else {
         return;
     }
@@ -68,4 +76,54 @@ function clear() {
 
 function getTokens(expression: string): string[] {
     return expression.split(/([\-\+\/\*])/).filter((token: string) => token !== "")
+}
+
+function displayResult(result: string): void {
+    calculation = result
+    calculationResult.value = calculation;
+}
+
+function isExpressionValid(expression: string): boolean {
+    return /[^\-\+\/\*\.]$/.test(expression)
+}
+
+function getExpressionResult(tokens: string[]): string {
+    let indexOp: number = -1
+
+    // First we check if there is * or / in the expression
+    if (tokens.includes("*") || tokens.includes("/")) {
+        indexOp = tokens.findIndex((token: string) => token === "*" || token === "/")
+    }
+
+    // If there is not * or / we can check + and -
+    if (indexOp === -1 && (tokens.includes("+") || tokens.includes("-"))) {
+        indexOp = tokens.findIndex((token: string) => token === "+" || token === "-")
+    }
+
+    if (indexOp !== -1) {
+        const a: number = +tokens[indexOp - 1]
+        const op: string = tokens[indexOp]
+        const b: number = +tokens[indexOp + 1]
+        const result: number = makeOperation(a, b, op);
+        tokens.splice(indexOp - 1, 3, result.toString())
+        return getExpressionResult(tokens);
+    }
+
+    return tokens[0]
+}
+
+function makeOperation(a: number, b: number, operator: string): number {
+    switch (operator) {
+        case "+":
+            return a + b
+        case "-":
+            return a - b
+        case "/":
+            if (b === 0) throw new Error("Division by zero is prohibited!")
+            return a / b
+        case "*":
+            return a * b
+        default:
+            throw new Error("The operator doesn't exist!")
+    }
 }
