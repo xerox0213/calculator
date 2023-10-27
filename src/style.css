@@ -4,7 +4,7 @@
     box-sizing: border-box;
 }
 
-body{
+body {
     background-color: #f1f1f1;
     font-family: "Roboto", sans-serif;
 }
@@ -93,22 +93,33 @@ body{
 
 #screen {
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
     padding: 20px;
-    font-size: 35px;
     box-shadow: inset 0 0 15px 5px black;
 }
 
-#result{
+#error-message {
+    font-size: 20px;
+    text-align: center;
+    color: lightgrey;
+    visibility: hidden;
+}
+
+#error-message.active{
+    visibility: visible;
+}
+
+#result {
     display: block;
     width: 100%;
+    margin-top: auto;
     font-family: inherit;
-    font-size: 35px;
     text-align: right;
     padding: 5px;
     background-color: transparent;
     border: none;
     color: white;
+    font-size: 35px;
 }
 
 @media screen and (max-width: 400px) {
@@ -116,5 +127,9 @@ body{
         width: 300px;
         grid-template-columns: repeat(4, calc((300px - 40px - 30px) / 4));
         grid-template-rows: repeat(7, calc((300px - 40px - 30px) / 4));
+    }
+
+    #error-message {
+        font-size: 15px;
     }
 }
