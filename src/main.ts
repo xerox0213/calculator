@@ -34,7 +34,7 @@ function handleClickCalculatorBtn(e: MouseEvent) {
             }
         }
     } else {
-        return;
+        timeoutRef = displayError("Invalid character!")
     }
 }
 
