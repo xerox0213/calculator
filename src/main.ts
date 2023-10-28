@@ -102,15 +102,11 @@ function isExpressionValid(expression: string): boolean {
 }
 
 function getExpressionResult(tokens: string[]): string {
-    let indexOp: number = -1
-
     // First we check if there is * or / in the expression
-    if (tokens.includes("*") || tokens.includes("/")) {
-        indexOp = tokens.findIndex((token: string) => token === "*" || token === "/")
-    }
+    let indexOp: number = tokens.findIndex((token: string) => token === "*" || token === "/")
 
     // If there is not * or / we can check + and -
-    if (indexOp === -1 && (tokens.includes("+") || tokens.includes("-"))) {
+    if (indexOp === -1) {
         indexOp = tokens.findIndex((token: string) => token === "+" || token === "-")
     }
 
