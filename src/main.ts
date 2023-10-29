@@ -1,5 +1,5 @@
-const operators = ["+", "-", "/", "*"]
-const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+const operators: string[] = ["+", "-", "/", "*"]
+const numbers: string[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
 const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
 const errorMsg = document.getElementById("error-message") as HTMLParagraphElement
@@ -30,9 +30,7 @@ function getHandleClickCalculatorBtn() {
                 if (!isExpressionValid(expression)) {
                     throw new Error("Expression isn't valid!")
                 }
-                const tokens: string[] = getTokens(expression);
-                expression = getExpressionResult(tokens);
-                displayResult(expression)
+                expression = displayResult(expression)
             } catch (e) {
                 if (e instanceof Error) {
                     timeoutRef = displayError(e.message, timeoutRef)
@@ -92,8 +90,11 @@ function getTokens(expression: string): string[] {
     return expression.split(/([\-\+\/\*])/).filter((token: string) => token !== "")
 }
 
-function displayResult(result: string): void {
+function displayResult(expression: string): string {
+    const postfixNotation: string[] = convertToPostfixNotation(expression)
+    const result: string = getExpressionResult(postfixNotation)
     calculationResult.value = result;
+    return result
 }
 
 function displayError(msg: string, timeoutRef: number): number {
@@ -109,29 +110,64 @@ function isExpressionValid(expression: string): boolean {
     return /[^\-\+\/\*\.]$/.test(expression)
 }
 
-function getExpressionResult(tokens: string[]): string {
-    // First we check if there is * or / in the expression
-    let indexOp: number = findOperatorIndex(tokens, "*", "/")
-
-    // If there is not * or / we check + and -
-    if (indexOp === -1) {
-        indexOp = findOperatorIndex(tokens, "+", "-")
-    }
-
-    if (indexOp !== -1) {
-        const a: number = +tokens[indexOp - 1]
-        const op: string = tokens[indexOp]
-        const b: number = +tokens[indexOp + 1]
-        const result: number = getOperationResult(a, b, op);
-        tokens.splice(indexOp - 1, 3, result.toString())
-        return getExpressionResult(tokens);
-    }
-
-    return tokens[0]
+type Precedence = {
+    [key: string]: number;
 }
 
-function findOperatorIndex(tokens: string[], ...operators: string[]): number {
-    return tokens.findIndex((token: string) => operators.includes(token))
+const precedence: Precedence = {
+    "+": 0,
+    "-": 0,
+    "/": 1,
+    "*": 1
+}
+
+function convertToPostfixNotation(expression: string): string[] {
+    const tokens: string[] = getTokens(expression)
+    const postfix: string[] = []
+    const stack: string[] = []
+
+    for (const token of tokens) {
+        if (operators.includes(token)) {
+            const lastStackedOperator: string | undefined = stack[stack.length - 1]
+            if (!lastStackedOperator || precedence[token] > precedence[lastStackedOperator]) {
+                stack.push(token)
+            } else if (precedence[token] === precedence[lastStackedOperator]) {
+                const lastStackedOperator = stack.pop() as string
+                postfix.push(lastStackedOperator)
+                stack.push(token)
+            } else {
+                while (stack.length > 0) {
+                    const lastStackedOperator: string = stack.pop() as string
+                    postfix.push(lastStackedOperator)
+                }
+                stack.push(token)
+            }
+        } else {
+            postfix.push(token)
+        }
+    }
+
+    while (stack.length > 0) {
+        const lastStackedOperator: string = stack.pop() as string
+        postfix.push(lastStackedOperator)
+    }
+
+    return postfix
+}
+
+function getExpressionResult(postfix: string[]): string {
+    const stack: string[] = []
+    for (const token of postfix) {
+        if (!operators.includes(token)) {
+            stack.push(token)
+        } else {
+            const b: string = stack.pop() as string;
+            const a: string = stack[stack.length - 1] ? stack.pop() as string : "0";
+            const result: number = getOperationResult(+a, +b, token)
+            stack.push(result.toString())
+        }
+    }
+    return stack[stack.length - 1]
 }
 
 function getOperationResult(a: number, b: number, operator: string): number {
