@@ -75,13 +75,16 @@ function displayPoint(p: string, expression: string): string {
 }
 
 function clearEntry(expression: string): string {
-    if (expression.length === 1) return "0"
-    else expression = expression.slice(0, -1)
-    calculationResult.value = expression
-    return expression
+    if (expression.length === 1) {
+        return clear()
+    } else {
+        expression = expression.slice(0, -1)
+        calculationResult.value = expression
+        return expression
+    }
 }
 
-function clear() {
+function clear(): string {
     calculationResult.value = "0"
     return "0"
 }
@@ -137,8 +140,8 @@ function convertToPostfixNotation(expression: string): string[] {
                 stack.push(token)
             } else {
                 while (stack.length > 0) {
-                    const lastStackedOperator: string = stack.pop() as string
-                    postfix.push(lastStackedOperator)
+                    const operator: string = stack.pop() as string
+                    postfix.push(operator)
                 }
                 stack.push(token)
             }
