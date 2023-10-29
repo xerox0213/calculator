@@ -3,79 +3,89 @@ const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
 const calculationResult: HTMLInputElement = document.querySelector("#result") as HTMLInputElement
 const errorMsg = document.getElementById("error-message") as HTMLParagraphElement
-let calculation: string = calculationResult.value;
-let timeoutRef: number;
+const handleClickCalculatorBtn = getHandleClickCalculatorBtn()
+
 calculatorBtns.forEach((btn: HTMLButtonElement) => {
     btn.addEventListener("click", handleClickCalculatorBtn)
 })
 
-function handleClickCalculatorBtn(e: MouseEvent) {
-    const calculatorBtn: HTMLButtonElement = e.target as HTMLButtonElement
-    const btnValue: string = calculatorBtn.value
-    if (operators.includes(btnValue)) {
-        displayOperator(btnValue)
-    } else if (numbers.includes(btnValue)) {
-        displayNumber(btnValue)
-    } else if (btnValue === ".") {
-        displayPoint(btnValue);
-    } else if (btnValue === "CE") {
-        clearEntry();
-    } else if (btnValue === "C") {
-        clear();
-    } else if (btnValue === "=") {
-        try {
-            if (!isExpressionValid(calculation)) throw new Error("Expression isn't valid!")
-            const tokens: string[] = getTokens(calculation);
-            const result: string = getExpressionResult(tokens);
-            displayResult(result)
-        } catch (e) {
-            if (e instanceof Error) {
-                timeoutRef = displayError(e.message)
+function getHandleClickCalculatorBtn() {
+    let expression: string = calculationResult.value;
+    let timeoutRef: number = 0;
+    return (e: MouseEvent): void => {
+        const calculatorBtn: HTMLButtonElement = e.target as HTMLButtonElement
+        const btnValue: string = calculatorBtn.value
+        if (operators.includes(btnValue)) {
+            expression = displayOperator(btnValue, expression)
+        } else if (numbers.includes(btnValue)) {
+            expression = displayNumber(btnValue, expression)
+        } else if (btnValue === ".") {
+            expression = displayPoint(btnValue, expression);
+        } else if (btnValue === "CE") {
+            expression = clearEntry(expression);
+        } else if (btnValue === "C") {
+            expression = clear();
+        } else if (btnValue === "=") {
+            try {
+                if (!isExpressionValid(expression)) {
+                    throw new Error("Expression isn't valid!")
+                }
+                const tokens: string[] = getTokens(expression);
+                expression = getExpressionResult(tokens);
+                displayResult(expression)
+            } catch (e) {
+                if (e instanceof Error) {
+                    timeoutRef = displayError(e.message, timeoutRef)
+                }
             }
+        } else {
+            timeoutRef = displayError("Invalid character!", timeoutRef)
         }
-    } else {
-        timeoutRef = displayError("Invalid character!")
     }
 }
 
-function displayOperator(o: string) {
-    const tokens: string[] = getTokens(calculation);
+function displayOperator(o: string, expression: string): string {
+    const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
     if ((operators.includes(lastToken) && tokens.length === 1) || lastToken === ".") {
-        return;
+        return expression;
     } else if ((o === "-" && tokens.length === 1 && lastToken === "0") || operators.includes(lastToken)) {
-        calculation = calculation.slice(0, -1) + o;
-    } else calculation += o;
-    calculationResult.value = calculation;
+        expression = expression.slice(0, -1) + o;
+    } else expression += o;
+    calculationResult.value = expression;
+    return expression
 }
 
-function displayNumber(n: string) {
-    const tokens: string[] = getTokens(calculation);
+function displayNumber(n: string, expression: string): string {
+    const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
     if (lastToken === "0") {
-        if (n === "0") return
-        else calculation = calculation.slice(0, -1) + n
-    } else calculation += n
-    calculationResult.value = calculation;
+        if (n === "0") return expression
+        else expression = expression.slice(0, -1) + n
+    } else expression += n
+    calculationResult.value = expression;
+    return expression
 }
 
-function displayPoint(p: string) {
-    const tokens: string[] = getTokens(calculation);
+function displayPoint(p: string, expression: string): string {
+    const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
-    if (operators.includes(lastToken) || /\./.test(lastToken)) return;
-    calculation += p;
-    calculationResult.value = calculation;
+    if (operators.includes(lastToken) || /\./.test(lastToken)) return expression;
+    expression += p;
+    calculationResult.value = expression;
+    return expression
 }
 
-function clearEntry() {
-    if (calculation.length === 1) calculation = "0"
-    else calculation = calculation.slice(0, -1)
-    calculationResult.value = calculation
+function clearEntry(expression: string): string {
+    if (expression.length === 1) return "0"
+    else expression = expression.slice(0, -1)
+    calculationResult.value = expression
+    return expression
 }
 
 function clear() {
-    calculation = "0";
-    calculationResult.value = calculation
+    calculationResult.value = "0"
+    return "0"
 }
 
 function getTokens(expression: string): string[] {
@@ -83,17 +93,15 @@ function getTokens(expression: string): string[] {
 }
 
 function displayResult(result: string): void {
-    calculation = result
-    calculationResult.value = calculation;
+    calculationResult.value = result;
 }
 
-function displayError(msg: string): number {
-    if (timeoutRef) clearTimeout(timeoutRef);
+function displayError(msg: string, timeoutRef: number): number {
+    clearTimeout(timeoutRef);
     errorMsg.textContent = msg;
     errorMsg.classList.add("active");
-    return setTimeout(() => {
+    return setTimeout((): void => {
         errorMsg.classList.remove("active")
-        timeoutRef = 0;
     }, 3000);
 }
 
@@ -103,18 +111,18 @@ function isExpressionValid(expression: string): boolean {
 
 function getExpressionResult(tokens: string[]): string {
     // First we check if there is * or / in the expression
-    let indexOp: number = tokens.findIndex((token: string) => token === "*" || token === "/")
+    let indexOp: number = findOperatorIndex(tokens, "*", "/")
 
-    // If there is not * or / we can check + and -
+    // If there is not * or / we check + and -
     if (indexOp === -1) {
-        indexOp = tokens.findIndex((token: string) => token === "+" || token === "-")
+        indexOp = findOperatorIndex(tokens, "+", "-")
     }
 
     if (indexOp !== -1) {
         const a: number = +tokens[indexOp - 1]
         const op: string = tokens[indexOp]
         const b: number = +tokens[indexOp + 1]
-        const result: number = makeOperation(a, b, op);
+        const result: number = getOperationResult(a, b, op);
         tokens.splice(indexOp - 1, 3, result.toString())
         return getExpressionResult(tokens);
     }
@@ -122,7 +130,11 @@ function getExpressionResult(tokens: string[]): string {
     return tokens[0]
 }
 
-function makeOperation(a: number, b: number, operator: string): number {
+function findOperatorIndex(tokens: string[], ...operators: string[]): number {
+    return tokens.findIndex((token: string) => operators.includes(token))
+}
+
+function getOperationResult(a: number, b: number, operator: string): number {
     switch (operator) {
         case "+":
             return a + b
