@@ -62,7 +62,7 @@ export function getOperationResult(a: number, b: number, operator: string): numb
     }
 }
 
-export function getExpressionResult(postfix: string[]): string {
+export function getPostfixResult(postfix: string[]): string {
     const stack: string[] = []
     for (const token of postfix) {
         if (!operators.includes(token)) {

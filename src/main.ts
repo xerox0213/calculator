@@ -1,4 +1,4 @@
-import {getExpressionResult, convertToPostfixNotation, operators, numbers} from "./math.ts";
+import {getPostfixResult, convertToPostfixNotation, operators, numbers} from "./math.ts";
 import {getTokens, isExpressionValid} from "./utils.ts";
 
 const calculatorBtns: NodeListOf<HTMLButtonElement> = document.querySelectorAll("button");
@@ -17,18 +17,24 @@ function getHandleClickCalculatorBtn() {
         const calculatorBtn: HTMLButtonElement = e.target as HTMLButtonElement
         const btnValue: string = calculatorBtn.value
         if (operators.includes(btnValue)) {
-            expression = displayOperator(btnValue, expression)
+            expression = addOperator(btnValue, expression)
+            displayExpression(expression)
         } else if (numbers.includes(btnValue)) {
-            expression = displayNumber(btnValue, expression)
+            expression = addOperand(btnValue, expression)
+            displayExpression(expression)
         } else if (btnValue === ".") {
-            expression = displayPoint(btnValue, expression);
+            expression = addPoint(btnValue, expression);
+            displayExpression(expression)
         } else if (btnValue === "CE") {
-            expression = clearEntry(expression);
+            expression = removeLastChar(expression);
+            displayExpression(expression)
         } else if (btnValue === "C") {
-            expression = clear();
+            expression = "0";
+            displayExpression(expression)
         } else if (btnValue === "=") {
             try {
-                expression = displayResult(expression)
+                expression = getExpressionResult(expression)
+                displayExpression(expression)
             } catch (e) {
                 if (e instanceof Error) {
                     timeoutRef = displayError(e.message, timeoutRef)
@@ -40,7 +46,11 @@ function getHandleClickCalculatorBtn() {
     }
 }
 
-function displayOperator(o: string, expression: string): string {
+function displayExpression(expression: string) {
+    calculationResult.value = expression
+}
+
+function addOperator(o: string, expression: string): string {
     const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
     if ((operators.includes(lastToken) && tokens.length === 1) || lastToken === ".") {
@@ -48,53 +58,49 @@ function displayOperator(o: string, expression: string): string {
     } else if ((o === "-" && tokens.length === 1 && lastToken === "0") || operators.includes(lastToken)) {
         expression = expression.slice(0, -1) + o;
     } else expression += o;
-    calculationResult.value = expression;
     return expression
 }
 
-function displayNumber(n: string, expression: string): string {
+function addOperand(o: string, expression: string): string {
     const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
     if (lastToken === "0") {
-        if (n === "0") return expression
-        else expression = expression.slice(0, -1) + n
-    } else expression += n
-    calculationResult.value = expression;
+        if (o === "0") {
+            return expression
+        } else {
+            expression = expression.slice(0, -1) + o
+        }
+    } else {
+        expression += o
+    }
     return expression
 }
 
-function displayPoint(p: string, expression: string): string {
+function addPoint(p: string, expression: string): string {
     const tokens: string[] = getTokens(expression);
     const lastToken: string = tokens[tokens.length - 1];
-    if (operators.includes(lastToken) || /\./.test(lastToken)) return expression;
+    if (operators.includes(lastToken) || /\./.test(lastToken)) {
+        return expression;
+    }
     expression += p;
-    calculationResult.value = expression;
     return expression
 }
 
-function clearEntry(expression: string): string {
+function removeLastChar(expression: string): string {
     if (expression.length === 1) {
-        return clear()
+        return "0"
     } else {
         expression = expression.slice(0, -1)
-        calculationResult.value = expression
         return expression
     }
 }
 
-function clear(): string {
-    calculationResult.value = "0"
-    return "0"
-}
-
-function displayResult(expression: string): string {
+function getExpressionResult(expression: string): string {
     if (!isExpressionValid(expression)) {
         throw new Error("Expression isn't valid!")
     }
     const postfixNotation: string[] = convertToPostfixNotation(expression)
-    const result: string = getExpressionResult(postfixNotation)
-    calculationResult.value = result;
-    return result
+    return getPostfixResult(postfixNotation)
 }
 
 function displayError(msg: string, timeoutRef: number): number {
